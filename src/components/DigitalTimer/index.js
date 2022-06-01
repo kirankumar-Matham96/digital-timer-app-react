@@ -1,6 +1,5 @@
 import {Component} from 'react'
 import './index.css'
-import {disable} from 'workbox-navigation-preload'
 
 class DigitalTimer extends Component {
   state = {
@@ -15,6 +14,7 @@ class DigitalTimer extends Component {
     const {isStart} = this.state
 
     if (isStart) {
+      this.setState({isDisabled: true})
       this.timer = setInterval(() => this.tick(), 1000)
     } else {
       clearInterval(this.timer)
@@ -22,9 +22,12 @@ class DigitalTimer extends Component {
   }
 
   onToggleTimer = async () => {
+    // TODO: some error is here. Need to solve it on next start! (start and pause after timer stops with 00:00)
+    const {minutes} = this.state
+    console.log({minutes})
     await this.setState(prevState => ({
       isStart: !prevState.isStart,
-      isDisabled: !prevState.isDisabled,
+      minutes: prevState.minutes === '00' ? 25 : prevState.minutes,
     }))
     this.onTimerStartedOrPaused()
   }
@@ -35,37 +38,45 @@ class DigitalTimer extends Component {
     let minutesValue = parseInt(minutes)
     let secondsValue = parseInt(seconds) - 1
 
-    if (secondsValue === -1) {
-      minutesValue -= 1
-      secondsValue = 59
-    }
-
-    if (secondsValue < 10 && minutesValue < 10) {
+    if (minutesValue === 0 && secondsValue === 0) {
+      clearInterval(this.timer)
       minutesValue = `0${minutesValue}`
       secondsValue = `0${secondsValue}`
-    } else if (minutesValue < 10 && secondsValue === 60) {
-      minutesValue = `0${minutesValue}`
-      secondsValue = `0${0}`
-    } else if (secondsValue >= 10 && minutesValue < 10) {
-      minutesValue = `0${minutesValue}`
-      secondsValue = `${secondsValue}`
-    } else if (secondsValue >= 10 && minutesValue >= 10) {
-      minutesValue = `${minutesValue}`
-      secondsValue = `${secondsValue}`
-    } else if (secondsValue < 10 && minutesValue >= 10) {
-      minutesValue = `${minutesValue}`
-      secondsValue = `0${secondsValue}`
-    }
+      this.setState(prevState => ({
+        isStart: !prevState.isStart,
+        timeLimit: 25,
+        isDisabled: false,
+      }))
+    } else {
+      if (secondsValue === -1 && minutesValue !== 0) {
+        minutesValue -= 1
+        secondsValue = 59
+      }
 
+      if (secondsValue < 10 && minutesValue < 10) {
+        minutesValue = `0${minutesValue}`
+        secondsValue = `0${secondsValue}`
+      } else if (minutesValue < 10 && secondsValue === 60) {
+        minutesValue = `0${minutesValue}`
+        secondsValue = `0${0}`
+      } else if (secondsValue >= 10 && minutesValue < 10) {
+        minutesValue = `0${minutesValue}`
+        secondsValue = `${secondsValue}`
+      } else if (secondsValue >= 10 && minutesValue >= 10) {
+        minutesValue = `${minutesValue}`
+        secondsValue = `${secondsValue}`
+      } else if (secondsValue < 10 && minutesValue >= 10) {
+        minutesValue = `${minutesValue}`
+        secondsValue = `0${secondsValue}`
+      }
+    }
     this.setState({minutes: `${minutesValue}`, seconds: `${secondsValue}`})
   }
-
-  onResetTimer = () => {}
 
   onDecreaseTimeLimit = () => {
     const {minutes} = this.state
 
-    let minutesValue = minutes !== 0 ? minutes - 1 : 0
+    let minutesValue = minutes !== 0 && minutes !== '00' ? minutes - 1 : 0
 
     minutesValue = minutesValue < 10 ? `0${minutesValue}` : `${minutesValue}`
 
@@ -88,13 +99,15 @@ class DigitalTimer extends Component {
     }))
   }
 
-  onReset = () => {
-    this.setState({
+  onReset = async () => {
+    await this.setState({
       minutes: 25,
       seconds: '00',
       timeLimit: 25,
       isStart: false,
+      isDisabled: false,
     })
+    this.onTimerStartedOrPaused()
   }
 
   render() {
@@ -106,9 +119,9 @@ class DigitalTimer extends Component {
         <div className="main-container">
           <div className="timer-container">
             <div className="timer-display-container">
-              <p className="time">
+              <h1 className="time">
                 {minutes}:{seconds}
-              </p>
+              </h1>
               <p className="timer-status-description">
                 {isStart ? 'Running' : 'Paused'}
               </p>
@@ -121,11 +134,19 @@ class DigitalTimer extends Component {
                 className="start-stop-reset-button"
                 onClick={this.onToggleTimer}
               >
-                <img
-                  src="https://assets.ccbp.in/frontend/react-js/play-icon-img.png"
-                  alt="play icon"
-                  className="start-stop-reset-icon"
-                />
+                {isStart ? (
+                  <img
+                    src="https://assets.ccbp.in/frontend/react-js/pause-icon-img.png"
+                    alt="pause icon"
+                    className="start-stop-reset-icon"
+                  />
+                ) : (
+                  <img
+                    src="https://assets.ccbp.in/frontend/react-js/play-icon-img.png"
+                    alt="play icon"
+                    className="start-stop-reset-icon"
+                  />
+                )}
                 <p className="start-stop-description">
                   {isStart ? 'Pause' : 'Start'}
                 </p>
@@ -149,7 +170,7 @@ class DigitalTimer extends Component {
                 type="button"
                 className="time-change-button"
                 onClick={this.onDecreaseTimeLimit}
-                // disabled={isDisabled}
+                disabled={isDisabled}
               >
                 -
               </button>
@@ -158,7 +179,7 @@ class DigitalTimer extends Component {
                 type="button"
                 className="time-change-button"
                 onClick={this.onIncreaseTimeLimit}
-                // disabled={isDisabled}
+                disabled={isDisabled}
               >
                 +
               </button>

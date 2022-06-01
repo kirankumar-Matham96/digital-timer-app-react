@@ -13,6 +13,9 @@
   background-image: linear-gradient(#fff, #cffcf1, #defafe);
 }
 @media (min-width: 768px) {
+  .bg-container {
+    background-image: linear-gradient(to right, #fff, #cffcf1, #defafe);
+  }
 }
 
 .main-heading {
