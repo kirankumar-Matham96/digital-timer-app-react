@@ -22,12 +22,12 @@ class DigitalTimer extends Component {
   }
 
   onToggleTimer = async () => {
-    // TODO: some error is here. Need to solve it on next start! (start and pause after timer stops with 00:00)
-    const {minutes} = this.state
-    console.log({minutes})
     await this.setState(prevState => ({
       isStart: !prevState.isStart,
-      minutes: prevState.minutes === '00' ? 25 : prevState.minutes,
+      minutes:
+        prevState.minutes === '00' && prevState.seconds === '00'
+          ? prevState.timeLimit
+          : prevState.minutes,
     }))
     this.onTimerStartedOrPaused()
   }
@@ -36,7 +36,10 @@ class DigitalTimer extends Component {
     const {minutes, seconds} = this.state
 
     let minutesValue = parseInt(minutes)
-    let secondsValue = parseInt(seconds) - 1
+    let secondsValue =
+      parseInt(minutes) === 0 && parseInt(seconds) === 0
+        ? 0
+        : parseInt(seconds) - 1
 
     if (minutesValue === 0 && secondsValue === 0) {
       clearInterval(this.timer)
@@ -44,8 +47,6 @@ class DigitalTimer extends Component {
       secondsValue = `0${secondsValue}`
       this.setState(prevState => ({
         isStart: !prevState.isStart,
-        timeLimit: 25,
-        isDisabled: false,
       }))
     } else {
       if (secondsValue === -1 && minutesValue !== 0) {
@@ -73,27 +74,27 @@ class DigitalTimer extends Component {
     this.setState({minutes: `${minutesValue}`, seconds: `${secondsValue}`})
   }
 
-  onDecreaseTimeLimit = () => {
+  onDecreaseTimeLimit = async () => {
     const {minutes} = this.state
 
-    let minutesValue = minutes !== 0 && minutes !== '00' ? minutes - 1 : 0
+    let minutesValue = minutes > 1 && minutes !== '00' ? minutes - 1 : 1
 
     minutesValue = minutesValue < 10 ? `0${minutesValue}` : `${minutesValue}`
 
-    this.setState(prevState => ({
-      timeLimit: prevState.timeLimit !== 0 ? prevState.timeLimit - 1 : 0,
+    await this.setState(prevState => ({
+      timeLimit: prevState.timeLimit > 1 ? prevState.timeLimit - 1 : 1,
       minutes: minutesValue,
     }))
   }
 
-  onIncreaseTimeLimit = () => {
+  onIncreaseTimeLimit = async () => {
     const {minutes} = this.state
 
     let minutesValue = parseInt(minutes) + 1
 
     minutesValue = minutesValue < 10 ? `0${minutesValue}` : `${minutesValue}`
 
-    this.setState(prevState => ({
+    await this.setState(prevState => ({
       timeLimit: prevState.timeLimit + 1,
       minutes: minutesValue,
     }))

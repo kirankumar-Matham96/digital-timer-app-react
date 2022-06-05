@@ -188,7 +188,7 @@
 @media (min-width: 768px) {
 }
 .time-limit-display {
-  background-image: linear-gradient(to right, #cffcf1, #00d9f5);
+  background-image: linear-gradient(to right, #4fffc4, #00d9f5);
   font-size: 24px;
   font-weight: bold;
   border-radius: 10px;
